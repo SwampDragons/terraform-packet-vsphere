@@ -1,4 +1,4 @@
-resource "packet_project" "test" {
+data "packet_project" "test" {
   name = var.project_name
 }
 
@@ -19,7 +19,7 @@ resource "tls_private_key" "test" {
 resource "packet_project_ssh_key" "test" {
   name       = local.ssh_key_name
   public_key = tls_private_key.test.public_key_openssh
-  project_id = packet_project.test.id
+  project_id = var.packer_project_UUID
 }
 
 data "packet_operating_system" "bastion" {
@@ -40,7 +40,7 @@ resource "packet_device" "bastion" {
   facilities              = [var.facility]
   operating_system        = data.packet_operating_system.bastion.id
   billing_cycle           = "hourly"
-  project_id              = packet_project.test.id
+  project_id              = var.packer_project_UUID
   project_ssh_key_ids     = [packet_project_ssh_key.test.id]
   network_type            = "hybrid"
   public_ipv4_subnet_size = local.bastion_subnet_size
@@ -155,10 +155,9 @@ resource "packet_device" "esxi" {
   facilities              = [var.facility]
   operating_system        = data.packet_operating_system.esxi.id
   billing_cycle           = "hourly"
-  project_id              = packet_project.test.id
+  project_id              = var.packer_project_UUID
   project_ssh_key_ids     = [packet_project_ssh_key.test.id]
   network_type            = "hybrid"
-  public_ipv4_subnet_size = local.esxi_subnet_size
 
   provisioner "remote-exec" {
     connection {

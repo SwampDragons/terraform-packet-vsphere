@@ -1,3 +1,7 @@
+variable "packer_project_UUID" {
+  default = "0e4a3eff-5b11-4408-a38c-ad41366b0736"
+}
+
 variable "esxi_plan" {
   default = "c1.xlarge.x86"
 }
@@ -25,11 +29,11 @@ variable "dns_servers" {
 }
 
 variable "datacenter_name" {
-  default = "TfDatacenter"
+  default = "PackerDatacenter"
 }
 
 variable "project_name" {
-  default = "Experimental vSphere Lab"
+  default = "Packer Team"
 }
 
 variable "ovftool_url" {

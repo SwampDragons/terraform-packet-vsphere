@@ -2,7 +2,7 @@ resource "packet_vlan" "default" {
   count       = length(local.vlans)
   description = local.vlans[count.index].name
   facility    = var.facility
-  project_id  = packet_project.test.id
+  project_id  = var.packer_project_UUID
 }
 
 resource "packet_port_vlan_attachment" "esxi" {
