@@ -41,28 +41,173 @@ _(*)_ - Launching VMs with public IP requires VCSA having 2 networks (both L2 & 
 
 ## How To Use
 
-### Prerequisites
+### Create a Packet User and API key
 
-- Obtain API token for Packet.net and put it in the [relevant ENV variable](https://www.terraform.io/docs/providers/packet/#auth_token)
-- Register and/or login to the [VMware portal](https://my.vmware.com/web/vmware/login)
-- Download [VMware OVF Tool for Linux 64-bit](https://my.vmware.com/group/vmware/details?downloadGroup=OVFTOOL410&productId=353)
-- Download [VMware vCenter Server Appliance](https://my.vmware.com/group/vmware/details?downloadGroup=VC67U1B&productId=742&rPId=31320)
-- Upload both to an automation-friendly location (such as [S3](https://aws.amazon.com/s3/) or [Wasabi](https://wasabi.com/))
-  - Make sure the location of the data is close to the chosen Packet.net facility
-  	(the VCSA ISO has around *4GB*, so downloading would take a long time with a slow connection), e.g.
-    - Wasabi's `eu-central-1`/Amsterdam & Packet's `ams1`/Amsterdam
-    - AWS S3 `eu-central-1`/Frankfurt & Packet's `fra2`/Frankfurt
-- Create curl-able URLs - see examples below
+To do this, create a Packet.net user, and get that user added to the
+"Packer Team" project. Megan or the infraplat team can do this.
+
+Create an API key for your user *for the project*. Packet has both user-specific
+and project-specific keys; for this situation you will need a project-specific
+key. Packet UI navigation path is approximately:
+
+`Packer Team > Project Settings > API Keys > +Add`
+
+Export the token into the [relevant ENV variable](https://www.terraform.io/docs/providers/packet/#auth_token):
+
+```sh
+export PACKET_AUTH_TOKEN=$YOUR_TOKEN_COPIED_FROM_THE_PACKET_UI
+```
+
+### Create local curl-able links to VMWare iso and ovftools
+
+The [VMware OVF Tool for Linux 64-bit](https://my.vmware.com/group/vmware/details?downloadGroup=OVFTOOL410&productId=353)
+and the [VMware vCenter Server Appliance](https://my.vmware.com/group/vmware/details?downloadGroup=VC67U1B&productId=742&rPId=31320)
+are both already uploaded to the "packet-uploads" bucket in Packer's Amazon S3
+account.
+
+Install the AWS CLI, and log into your AWS profile. Then create the following
+TF_VARs:
+
+```sh
+export TF_VAR_ovftool_url=$(aws s3 presign --expires-in=7200 s3://packet-uploads/VMware-ovftool-4.1.0-2459827-lin.x86_64.bundle)
+export TF_VAR_vcsa_iso_url=$(aws s3 presign --expires-in=7200 s3://packet-uploads/VMware-VCSA-all-6.7.0-11726888.iso)
+```
 
 ### Terraform Apply
 
+You can pick whichever facility you want. That's the Packet datacenter that the
+cluster will be launched in.
+
 ```sh
-export TF_VAR_ovftool_url=$(aws --profile=vmware s3 presign --expires-in=7200 s3://S3_BUCKET_NAME/vmware-ovftool/VMware-ovftool-4.3.0-7948156-lin.x86_64.bundle)
-export TF_VAR_vcsa_iso_url=$(aws --profile=vmware s3 presign --expires-in=7200 s3://S3_BUCKET_NAME/vmware-vsphere/VMware-VCSA-all-6.7.0-11726888.iso)
 terraform apply -var=facility=ams1 -var=esxi_plan=c1.xlarge.x86
 ```
 
-## How To
+Type "yes" when prompted.
+
+### Wait.
+
+The run will take around half an hour. Find something else to do, or kick it off right before your lunch break.
+
+Go to Megan for troubleshooting help if the Terraform run doesn't succeed.
+
+When complete, it'll print output variables:
+
+```
+null_resource.esxi-provisioning: Creation complete after 17m49s [id=4321033985131245590]
+
+Apply complete! Resources: 13 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+bastion_host = 147.75.91.85
+bastion_user = root
+datacenter_name = PackerDatacenter
+esxi_host = 147.75.201.186
+esxi_password = ?b3JY[sI12
+esxi_user = root
+vcenter_endpoint = 147.75.201.187
+vcenter_password = S7o9@pEB1Ab9d6Wh
+vcenter_user = Administrator@vsphere.local
+```
+
+### Determine static IP address for instance, and update preseed
+
+```sh
+# Save the SSH key, and update perms.
+echo 'tls_private_key.test.private_key_pem' | terraform console > ~/.ssh/packet-test
+chmod 600 ~/.ssh/packet-test
+
+# SSH onto the esxi host
+ssh -i ~/.ssh/packet-test $(terraform output esxi_user)@$(terraform output esxi_host)
+
+# Use the esxcli to figure out the gateway
+esxcli network ip interface ipv4 get
+```
+
+Example output from the above:
+
+```
+[root@esxi-01:~] esxcli network ip interface ipv4 get
+Name  IPv4 Address    IPv4 Netmask     IPv4 Broadcast  Address Type  Gateway         DHCP DNS
+----  --------------  ---------------  --------------  ------------  --------------  --------
+vmk0  147.75.201.186  255.255.255.248  147.75.201.191  STATIC        147.75.201.185     false
+vmk1  10.88.154.2     255.255.255.248  10.88.154.7     STATIC        0.0.0.0            false
+```
+
+In this case our gateway is `147.75.201.185`
+
+You can determine your available IP range by calling
+
+```sh
+ipcalc $(terraform output vcenter_endpoint)/29
+```
+
+The output will look something like:
+
+```
+Address:   147.75.201.187       10010011.01001011.11001001.10111 011
+Netmask:   255.255.255.248 = 29 11111111.11111111.11111111.11111 000
+Wildcard:  0.0.0.7              00000000.00000000.00000000.00000 111
+=>
+Network:   147.75.201.184/29    10010011.01001011.11001001.10111 000
+HostMin:   147.75.201.185       10010011.01001011.11001001.10111 001
+HostMax:   147.75.201.190       10010011.01001011.11001001.10111 110
+Broadcast: 147.75.201.191       10010011.01001011.11001001.10111 111
+Hosts/Net: 6                     Class B
+```
+
+the hostMin and hostMax show the available IP reange. Since 185 is the gateway,
+we can use 186, 187, 188, 189, or 190 as our instance's IP. Let's use 190.
+
+Inside your preseed, change the netcfg/get_ipaddress line to contain one of the
+free a free IP addresses we found above:
+
+`d-i netcfg/get_ipaddress string 147.75.201.190`
+
+Change the line netcfg/get_gateway line to match the gateway you discovered via
+the esxcli earlier:
+
+`d-i netcfg/get_gateway string 147.75.201.185`
+
+Save the file and place in a location where your build script can find it.
+
+### Run a Packer build
+
+Change directories into base_packer_ubuntu, or whichever directory contains
+your packer template.
+
+You can dump the terraform output into a variables file that Packer will
+understand using jq:
+
+``` sh
+terraform output --json | jq 'with_entries(.value |= .value)' > variables.json
+```
+
+Now build -- note that the build will fail unless you provide the var-file and
+variables:
+
+``` sh
+packer build -var-file="variables.json" \
+  -var 'gateway_ip=147.75.201.185' \
+  -var 'vm_ip=147.75.201.190' \
+  base_vsphere_ubuntu.json
+```
+
+## Miscellaneous How To
+
+### Connect to VCenter web client
+
+Open a web browser. Navigate to https://vcenter_endpoint (replace
+"vcenter_endpoint with" the value of vcenter_endpoint from the terraform output,
+in this example 139.178.91.219). Click "launch web client".
+Enter the vcenter_user and vcenter_password from the terraform output. Now you
+can see the web client, and access the instances if you want via the web
+console.
+
+Note: The above won't work on Chrome because it doesn't like that the
+certificates are not valid. You can bypass warnings about this in other browsers
+like Safari.
+
 
 ### Copy SSH key
 
