@@ -79,7 +79,7 @@ You can pick whichever facility you want. That's the Packet datacenter that the
 cluster will be launched in.
 
 ```sh
-terraform apply -var=facility=ams1 -var=esxi_plan=c1.xlarge.x86
+terraform apply -var=facility=sjc1 -var=esxi_plan=c1.xlarge.x86
 ```
 
 Type "yes" when prompted.
@@ -191,6 +191,15 @@ packer build -var-file="variables.json" \
   -var 'gateway_ip=147.75.201.185' \
   -var 'vm_ip=147.75.201.190' \
   base_vsphere_ubuntu.json
+```
+
+### Clean up
+
+When you're done, destroy the cluster. Leaving it up indefinitely will incur
+lots of costs and get finance mad at us.
+
+```sh
+terraform destroy -var=facility=sjc1 -var=esxi_plan=c1.xlarge.x86
 ```
 
 ## Miscellaneous How To
