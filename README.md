@@ -159,17 +159,14 @@ Hosts/Net: 6                     Class B
 the hostMin and hostMax show the available IP reange. Since 185 is the gateway,
 we can use 186, 187, 188, 189, or 190 as our instance's IP. Let's use 190.
 
-Inside your preseed, change the netcfg/get_ipaddress line to contain one of the
-free a free IP addresses we found above:
+In the example build, I've abstracted away the need to set the variables
+directly in your preseed.
 
-`d-i netcfg/get_ipaddress string 147.75.201.190`
+All you need to do is set these two variables variables on the command line
+when you call packer:
 
-Change the line netcfg/get_gateway line to match the gateway you discovered via
-the esxcli earlier:
-
-`d-i netcfg/get_gateway string 147.75.201.185`
-
-Save the file and place in a location where your build script can find it.
+`-var 'vm_ip=147.75.201.190'` and `-var 'gateway_ip=147.75.201.185'`, using
+the values for each that you just discovered.
 
 ### Run a Packer build
 
