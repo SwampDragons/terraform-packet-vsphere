@@ -79,6 +79,7 @@ You can pick whichever facility you want. That's the Packet datacenter that the
 cluster will be launched in.
 
 ```sh
+terraform init
 terraform apply -var=facility=sjc1 -var=esxi_plan=c1.xlarge.x86
 ```
 
@@ -203,11 +204,23 @@ terraform destroy -var=facility=sjc1 -var=esxi_plan=c1.xlarge.x86
 
 ### Connect to VCenter web client
 
-Open a web browser. Navigate to https://vcenter_endpoint (replace
-"vcenter_endpoint with" the value of vcenter_endpoint from the terraform output,
-in this example 139.178.91.219). Click "launch web client".
-Enter the vcenter_user and vcenter_password from the terraform output. Now you
-can see the web client, and access the instances if you want via the web
+Open a web browser. Navigate to the VCenter endpoint IP address
+
+```
+terraform output vcenter_endpoint
+```
+
+Click "launch web client".
+Enter the vcenter_user and vcenter_password from the terraform output.
+
+```
+terraform output vcenter_user
+
+terraform output vcenter_password
+```
+
+
+Now you can see the web client, and access the instances if you want via the web
 console.
 
 Note: The above won't work on Chrome because it doesn't like that the
