@@ -46,11 +46,11 @@ _(*)_ - Launching VMs with public IP requires VCSA having 2 networks (both L2 & 
 To do this, create a Packet.net user, and get that user added to the
 "Packer Team" project. Megan or the infraplat team can do this.
 
-Create an API key for your user *for the project*. Packet has both user-specific
-and project-specific keys; for this situation you will need a project-specific
+Create an API key for your user. Packet has both user-specific
+and project-specific keys; for this situation you will need a user-specific
 key. Packet UI navigation path is approximately:
 
-`Packer Team > Project Settings > API Keys > +Add`
+`User Profile Dropdown Menu > API Keys > +Add`
 
 Export the token into the [relevant ENV variable](https://www.terraform.io/docs/providers/packet/#auth_token):
 
@@ -137,7 +137,7 @@ vmk1  10.88.154.2     255.255.255.248  10.88.154.7     STATIC        0.0.0.0    
 
 In this case our gateway is `147.75.201.185`
 
-You can determine your available IP range by calling
+You can determine your available IP range by calling `ipcalc` on your local machine - you may need to install ipcalc.
 
 ```sh
 ipcalc $(terraform output vcenter_endpoint)/29
