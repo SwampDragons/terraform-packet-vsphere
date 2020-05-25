@@ -62,7 +62,7 @@ locals {
     format(
       "%s/%s",
       packet_device.esxi.network[0].gateway,
-      packet_device.esxi.public_ipv4_subnet_size,
+      packet_device.esxi.network[0].cidr,
     ),
     3,
   )

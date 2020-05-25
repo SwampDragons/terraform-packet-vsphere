@@ -43,7 +43,15 @@ resource "packet_device" "bastion" {
   project_id              = var.packer_project_UUID
   project_ssh_key_ids     = [packet_project_ssh_key.test.id]
   network_type            = "hybrid"
-  public_ipv4_subnet_size = local.bastion_subnet_size
+
+  ip_address {
+      type = "private_ipv4"
+  }
+
+  ip_address {
+      type = "public_ipv4"
+      cidr = local.bastion_subnet_size
+  }
 
   connection {
     type        = "ssh"
@@ -146,7 +154,6 @@ data "packet_operating_system" "esxi" {
   name             = "VMware ESXi"
   distro           = "vmware"
   version          = var.esxi_version
-  provisionable_on = var.esxi_plan
 }
 
 resource "packet_device" "esxi" {
