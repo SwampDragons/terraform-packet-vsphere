@@ -73,6 +73,8 @@ export TF_VAR_ovftool_url=$(aws s3 presign --expires-in=7200 s3://packet-uploads
 export TF_VAR_vcsa_iso_url=$(aws s3 presign --expires-in=7200 s3://packet-uploads/VMware-VCSA-all-6.7.0-11726888.iso)
 ```
 
+The bucket was created in us-west-2, make sure your default region is set to the same region.
+
 ### Terraform Apply
 
 You can pick whichever facility you want. That's the Packet datacenter that the
