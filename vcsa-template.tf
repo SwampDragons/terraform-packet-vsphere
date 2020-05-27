@@ -22,7 +22,7 @@ locals {
         mode        = "static"
         dns_servers = "0.0.0.0" # Default DNS from interface
         ip          = local.vcenter_ip
-        prefix      = tostring(packet_device.esxi.public_ipv4_subnet_size)
+        prefix      = tostring(packet_device.esxi.network[0].cidr)
         gateway     = packet_device.esxi.network[0].gateway
         system_name = local.vcenter_ip
       }
