@@ -146,7 +146,6 @@ data "packet_operating_system" "esxi" {
   name             = "VMware ESXi"
   distro           = "vmware"
   version          = var.esxi_version
-  provisionable_on = var.esxi_plan
 }
 
 resource "packet_device" "esxi" {
