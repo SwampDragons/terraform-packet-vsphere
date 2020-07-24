@@ -12,7 +12,12 @@
       "insecure_connection": "true",
 
       "vm_name": "example-ubuntu",
-      "network":  "VM Network",
+      "network_adapters": [
+        {
+          "network": "VM Network",
+          "network_card": "vmxnet3"
+        }
+      ],
 
       "guest_os_type": "ubuntu64Guest",
 
@@ -24,17 +29,18 @@
       "RAM_reserve_all": true,
 
       "disk_controller_type":  "pvscsi",
-      "disk_size":        32768,
-      "disk_thin_provisioned": true,
+      "storage": [
+        {
+          "disk_size": 32768,
+          "disk_thin_provisioned": true
+        }
+      ],
       "datastore": "datastore1",
-
-      "network_card": "vmxnet3",
 
       "iso_urls": [
         "http://releases.ubuntu.com/16.04/ubuntu-16.04.6-server-amd64.iso"
       ],
-      "iso_checksum": "056b7c15efc15bbbf40bf1a9ff1a3531fcbf70a2",
-      "iso_checksum_type": "sha1",
+      "iso_checksum": "sha1:056b7c15efc15bbbf40bf1a9ff1a3531fcbf70a2",
 
       "floppy_files": [
         "./preseed_hardcoded_ip.cfg"
