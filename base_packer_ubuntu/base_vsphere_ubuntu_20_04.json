@@ -1,0 +1,65 @@
+{
+  "builders": [
+    {
+      "type": "vsphere-iso",
+
+      "datacenter":          "{{ user `datacenter_name`}}",
+      "vcenter_server":      "{{ user `vcenter_endpoint` }}",
+      "username":            "{{ user `vcenter_user` }}",
+      "password":            "{{ user `vcenter_password` }}",
+      "host":                "{{ user `esxi_host` }}",
+
+      "insecure_connection": "true",
+
+      "vm_name": "example-ubuntu",
+      "network_adapters": [
+        {
+          "network": "VM Network",
+          "network_card": "vmxnet3"
+        }
+      ],
+
+      "guest_os_type": "ubuntu64Guest",
+
+      "ssh_username": "vagrant",
+      "ssh_password": "vagrant",
+
+      "CPUs":             1,
+      "RAM":              1024,
+      "RAM_reserve_all": true,
+
+      "disk_controller_type":  "pvscsi",
+      "storage": [
+        {
+          "disk_size": 32768,
+          "disk_thin_provisioned": true
+        }
+      ],
+      "datastore": "datastore1",
+
+      "iso_url": "https://releases.ubuntu.com/20.04/ubuntu-20.04.1-live-server-amd64.iso",
+      "iso_checksum": "sha256:443511f6bf12402c12503733059269a2e10dec602916c0a75263e5d990f6bb93",
+
+      "floppy_label": "cidata",
+      "floppy_files": [
+        "/Users/mmarsh/dev/repro_cases/ubuntu_20.04_tinkering/http_vmware/user-data",
+        "/Users/mmarsh/dev/repro_cases/ubuntu_20.04_tinkering/http_vmware/meta-data"
+      ],
+      "ip_wait_timeout": "30m",
+
+      "boot_wait": "2s",
+      "boot_command": [
+        "<enter><wait2><enter><wait><f6><esc><wait>",
+        " autoinstall<wait2> ds=nocloud",
+        "<wait><enter>"
+      ]
+    }
+  ],
+
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": ["ls /"]
+    }
+  ]
+}
